@@ -33,7 +33,7 @@ func main(){
 
   * 使用import导入包，但是**包中的方法不使用**时编译会报错
 
-    ![image-20220713123828884](assets\image-20220713123828884.png)
+    ![image-20220713123828884](assets/image-20220713123828884.png)
 
   * 需要使用包的init函数，但是不使用包中的方法，使用`_`在包前，表示匿名导入，只需要包的init函数
 
@@ -41,7 +41,7 @@ func main(){
     import  _"fmt"
     ```
 
-    ![image-20220713124041001](assets\image-20220713124041001.png)
+    ![image-20220713124041001](assets/image-20220713124041001.png)
 
 * `package`可以和文件夹不同名
 
@@ -49,15 +49,15 @@ func main(){
 
   ![image-20220713124340760](assets/image-20220713124340760.png)
 
-![image-20220713124350680](assets\image-20220713124350680.png)
+![image-20220713124350680](assets/image-20220713124350680.png)
 
-![image-20220713124359388](assets\image-20220713124359388-16576874566471.png)
+![image-20220713124359388](assets/image-20220713124359388-16576874566471.png)
 
-![image-20220713124429706](assets\image-20220713124429706.png)
+![image-20220713124429706](assets/image-20220713124429706.png)
 
 * `{}`要和函数名放在一行，否者会报错(golang的格式检查非常严格)
 
-  ![image-20220713130740806](assets\image-20220713130740806.png)
+  ![image-20220713130740806](assets/image-20220713130740806.png)
 
 * `func`关键字，用于定义一个方法
 
@@ -93,7 +93,7 @@ func main(){
 
   * 和其他语言不一样的是，Go不会帮你做隐式类型转换,string类型的只能和string类型的拼接，和其他类型的拼接会报错(**Go是一个非常强类型的语言，不会做任何隐式类型转换**)
 
-    ![image-20220713130224100](assets\image-20220713130224100.png)
+    ![image-20220713130224100](assets/image-20220713130224100.png)
 
 
 
@@ -201,7 +201,7 @@ func main() {
 
 * 使用`:=`声明变量,只能在函数内部声明使用，在函数外面声明会报错
 
-  ![image-20220713134533703](assets\image-20220713134533703.png)
+  ![image-20220713134533703](assets/image-20220713134533703.png)
 
 ***
 
@@ -306,10 +306,10 @@ func main(){
   func main() {
   	s1 := make([]int, 3, 4)
   	s1 = append(s1, 5)
-  	fmt.Printf("s1:%v s1.len:%d s1.cap:%d\n", s1, len(s1), cap(s1))
+  	fmt.Printf("s1:%v s1.len:%d s1.cap:%d/n", s1, len(s1), cap(s1))
       //添加元素后没超出容量不会触发扩容
   	s1 = append(s1, 6)
-  	fmt.Printf("s1:%v s1.len:%d s1.cap:%d\n", s1, len(s1), cap(s1))
+  	fmt.Printf("s1:%v s1.len:%d s1.cap:%d/n", s1, len(s1), cap(s1))
       ///添加元素后超出容量后会触发扩容机制
   }
   ```
@@ -355,16 +355,16 @@ func main(){
       	s1 := make([]int, 3, 3)
       	s2 := s1[0:3]
       	println("修改S2前")
-      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v\n", s1, s1, s2, s2)
+      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v/n", s1, s1, s2, s2)
       	s2[0] = 1
       	println("修改S2后")
-      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v\n", s1, s1, s2, s2)
+      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v/n", s1, s1, s2, s2)
       	println("S1扩容:修改S2前")
       	s1 = append(s1, 3)
-      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v\n", s1, s1, s2, s2)
+      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v/n", s1, s1, s2, s2)
       	println("S1扩容:修改S2后")
       	s2[1] = 2
-      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v\n", s1, s1, s2, s2)
+      	fmt.Printf("s1:%p s1:%v \n s2:%p,s2:%v/n", s1, s1, s2, s2)
       }
       ```
 
@@ -630,19 +630,19 @@ type Fish struct {
 }
 
 func (F *Fish) Swim() {
-	fmt.Println("Fish is swimming\n")
+	fmt.Println("Fish is swimming/n")
 }
 
 type FakeFish Fish
 
 func (FF *FakeFish) FakeFishSwim() {
-	fmt.Println("FakeFish is swimming\n")
+	fmt.Println("FakeFish is swimming/n")
 }
 
 type StrongFakeFish Fish
 
 func (SFF *StrongFakeFish) Swim() {
-	fmt.Println("StrongFakeFish is swimming\n")
+	fmt.Println("StrongFakeFish is swimming/n")
 }
 
 type RealFish = Fish
@@ -650,7 +650,7 @@ type RealFish = Fish
 func main() {
 	var m1 MyInt1 = 10
 	var m2 MyInt2 = 10
-	fmt.Printf("m1 type:%T \nm2 type:%T\n", m1, m2)
+	fmt.Printf("m1 type:%T \nm2 type:%T/n", m1, m2)
 	F := Fish{}
 	F.Swim()
 	FF := FakeFish{}
