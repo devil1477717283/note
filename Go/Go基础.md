@@ -33,7 +33,7 @@ func main(){
 
   * 使用import导入包，但是**包中的方法不使用**时编译会报错
 
-    ![image-20220713123828884](G:\桌面\笔记\Go\assets\image-20220713123828884.png)
+    ![image-20220713123828884](assets\image-20220713123828884.png)
 
   * 需要使用包的init函数，但是不使用包中的方法，使用`_`在包前，表示匿名导入，只需要包的init函数
 
@@ -41,23 +41,23 @@ func main(){
     import  _"fmt"
     ```
 
-    ![image-20220713124041001](G:\桌面\笔记\Go\assets\image-20220713124041001.png)
+    ![image-20220713124041001](assets\image-20220713124041001.png)
 
 * `package`可以和文件夹不同名
 
 * 在同一文件夹的.go文件需要属于同一个`package`，不然会报错
 
-  ![image-20220713124340760](G:\桌面\笔记\Go\assets\image-20220713124340760.png)
+  ![image-20220713124340760](assets/image-20220713124340760.png)
 
-![image-20220713124350680](G:\桌面\笔记\Go\assets\image-20220713124350680.png)
+![image-20220713124350680](assets\image-20220713124350680.png)
 
-![image-20220713124359388](G:\桌面\笔记\Go\assets\image-20220713124359388-16576874566471.png)
+![image-20220713124359388](assets\image-20220713124359388-16576874566471.png)
 
-![image-20220713124429706](G:\桌面\笔记\Go\assets\image-20220713124429706.png)
+![image-20220713124429706](assets\image-20220713124429706.png)
 
 * `{}`要和函数名放在一行，否者会报错(golang的格式检查非常严格)
 
-  ![image-20220713130740806](G:\桌面\笔记\Go\assets\image-20220713130740806.png)
+  ![image-20220713130740806](assets\image-20220713130740806.png)
 
 * `func`关键字，用于定义一个方法
 
@@ -93,7 +93,7 @@ func main(){
 
   * 和其他语言不一样的是，Go不会帮你做隐式类型转换,string类型的只能和string类型的拼接，和其他类型的拼接会报错(**Go是一个非常强类型的语言，不会做任何隐式类型转换**)
 
-    ![image-20220713130224100](G:\桌面\笔记\Go\assets\image-20220713130224100.png)
+    ![image-20220713130224100](assets\image-20220713130224100.png)
 
 
 
@@ -201,7 +201,7 @@ func main() {
 
 * 使用`:=`声明变量,只能在函数内部声明使用，在函数外面声明会报错
 
-  ![image-20220713134533703](G:\桌面\笔记\Go\assets\image-20220713134533703.png)
+  ![image-20220713134533703](assets\image-20220713134533703.png)
 
 ***
 
@@ -417,7 +417,7 @@ func main(){
 
 * 使用for...range这种格式的for循环，可以用于数组、切片和map,对于数组和可以直接拿到index和value，对于map可以直接拿到key和value
 
-  * 如果不想要index或者key可以用`_`来不接收(**只能不接收第一个值，不能不接收第二个值**)
+  * 如果不想要index或者key可以用`_`来不接收
 
     ```go
         arr := []int{1,2,3,4}
@@ -510,4 +510,257 @@ func main(){
       }
   }
   ```
+
+## 基础语法type定义
+
+### interface定义
+
+```go
+package main
+
+import "net/http"
+
+type Server interface {
+	Route(pattern string, handleFunc http.HandlerFunc)
+	Start(address string) error
+}
+```
+
+* 接口的可访问性还是用首字母是否大小写控制
+* 接口中的方法声明不需要使用`func`关键字
+* 接口是一组行为的抽象
+* 尽量用接口，以实现面向接口编程
+
+### struct定义
+
+```go
+package main
+type sdkHttpServer struct {
+	name string
+    age int
+}
+
+func main(){
+    s1:=&sdkHttpServer{}
+    s2:=new(sdkHttpServer)
+    s3:=sdkHttpServer{}
+    var s4 sdkHttpServer =sdkHttpServer{}
+    //以上四种初始化，是将内存空间给你分配好，并将所有比特位置为0
+    //go中没有构造函数
+    var s5 *sdkHttpServer //不会初始化好，是一个指针，指针还没指向任何地方
+    
+    s6:=sdkHttpServer{"zs",18} //初始化按照字段声明顺序赋值
+    s7:=sdkHttpServer{
+        name:"ls",
+        age:18,
+    }//显式表示每一个字段，进行赋值
+    s8:=sdkHttpServer{}
+    s8.name="张三"
+}
+```
+
+### 指针
+
+* 和C与C++的指针一样，但是没有`->`操作符解引用结构体
+
+* 结构体要在自己的结构体中自引用要使用指针，否则会报错
+
+  * 原因是因为指针的大小是固定的，在分配时可以确定大小，如果是一个正常的struct类型，就会陷入无限递归这种境地，**无法计算大小**
+
+    ```go
+    type Node struct{
+        data int
+        //next Node,会报错
+        next *Node
+    }
+    ```
+
+### 结构体方法
+
+```go
+package main
+
+type User struct {
+	name string
+	age  int
+}
+
+func (u User) ChangeName(str string) {
+	u.name = str
+} //结构体接收器，不能直接调用，需要实例化一个结构体来调用
+func (u *User) ChangeAge(Age int) {
+	u.age = Age
+} //指针接收器
+func main() {
+	u := User{
+		name: "Tom",
+		age:  10,
+	}
+	u.ChangeName("Changed")
+	u.ChangeAge(20)
+	println(u.name, u.age)
+	up := &User{
+		name: "Jerry",
+		age:  12,
+	}
+	up.ChangeName("Changed")
+	up.ChangeAge(100)
+	println(up.name, up.age)
+}
+
+```
+
+* 结构体接收器接收的是实例的拷贝，在该方法中对结构体进行更改，不会影响原结构体，但是使用指针接收器就可以改变原结构体。
+
+  ![image-20220713192042937](assets/image-20220713192042937.png)
+
+  可以发现年龄都改成功了，但是名字都没有改成功
+
+### type A B 和type A=B
+
+```go
+package main
+
+import "fmt"
+
+type MyInt1 int
+type MyInt2 = int
+
+type Fish struct {
+}
+
+func (F *Fish) Swim() {
+	fmt.Println("Fish is swimming\n")
+}
+
+type FakeFish Fish
+
+func (FF *FakeFish) FakeFishSwim() {
+	fmt.Println("FakeFish is swimming\n")
+}
+
+type StrongFakeFish Fish
+
+func (SFF *StrongFakeFish) Swim() {
+	fmt.Println("StrongFakeFish is swimming\n")
+}
+
+type RealFish = Fish
+
+func main() {
+	var m1 MyInt1 = 10
+	var m2 MyInt2 = 10
+	fmt.Printf("m1 type:%T \nm2 type:%T\n", m1, m2)
+	F := Fish{}
+	F.Swim()
+	FF := FakeFish{}
+	println("FakeFish 转换前调用FakeFishSwim方法")
+    //FF.Swim()   会报错，因为FakeFish是一个全新的类型，并没有定义Swim方法
+ 	FF.FakeFishSwim()
+	td := Fish(FF)
+	println("将FakeFish转换成Fish后调用Swim方法")
+	td.Swim()
+	FFS := StrongFakeFish{}
+	println("StrongFakeFish调用Swim方法")
+	FFS.Swim()
+	ts := Fish(FFS)
+	println("StrongFakeFish转换成Fish后调用Swim方法")
+	ts.Swim()
+	println("RealFish直接调用Swim方法")
+	RS := RealFish{}
+	RS.Swim()
+}
+```
+
+* type A B 是定义了一种全新的类型A，type A=B是给B类型取了个别名
+
+  * 在编译时使用type A=B取得别名A会被还原成B类型
+
+    ![image-20220713175657961](assets/image-20220713175657961.png)
+
+  * 使用type A B定义一个全新类型A，A不能直接调用B的方法，直接调用会报错，但是将A转换成B类型就可以调用B类型的方法了
+
+    ![image-20220713181203654](assets/image-20220713181203654.png)
+
+  * 使用type A B定义全新类型时，当A 和B定义了同名方法时，实例化出来的对象是什么类型就调用什么类型的方法 是A类型就调用A类型的该方法，是B类型就调用B类型的该方法，如果将A转换成B类型，就调用B类型的方法
+
+    ![image-20220713181426448](assets/image-20220713181426448.png)
+
+  * 使用type A=B方式取得别名A可以调用B类型的方法，因为在编译时会将A还原成B类型，在编译器看来他们是同一种类型
+
+    ![image-20220713181529789](assets/image-20220713181529789.png)
+
+### 结构体定义接口
+
+* 当一个结构体具备这个接口的所有方法的时候，它就实现了这个接口
+
+### type总结
+
+* type定义熟记，其中type A=B这种别名，一般只用于兼容性处理，所以不需要过多关注
+  * 先有抽象再实现，所以要先定义接口
+* 鸭子类型：一个结构体具有某个接口的所有方法，它就实现了这个接口
+* 指针：方法接收器，遇事不决用指针
+
+## 空接口interface{}
+
+```go
+func (c *Context) ReadJson(req interface{}) error {
+	//读出body 处理Json 反序列化
+	r := c.R
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(body, req)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+```
+
+* 空接口不包含任何方法，所以任何结构体都实现了该接口(万能接口，所有参数都能接收)
+
+### json库
+
+```go
+type signUpReq struct{
+    Email string `json:"email"`,
+    Password string 'json:"password"',
+    ConfirmedPassword string 'json:"confirmed_password"'
+}
+//这个格式叫Tag,在运行时可以通过反射拿到json标签后面的值
+//典型的声明式写法
+```
+
+## map
+
+```go
+package main
+
+func main(){
+    m:=make(map[string]string,2)//创建一个预估容量为2的map
+    m1:=map[string]string{
+        "test":"this is a test"
+    }//直接初始化
+    m2:=make(map[string]string)//没有指定容量
+    
+    m["hello"]="world"
+    
+    val:=m["hello"] //取值
+    
+    val,ok:=m["no"]
+    if !ok{
+        
+    }
+    for key,val:=range m{
+        
+    }
+}
+```
+
+* map和其他语言的map使用方法基本一样
+* 有两点不同
+  * map取值时有两个返回值，第一个返回值是就是map[key]的value，第二个值返回是否成功取到该值，也就是该key，value是否存在于该map
+  * 使用for...range语法遍历map时，第一个值是key第二个值是value，前面讲for循环的时候提过了(注意，**map的遍历，顺序是不确定的**)
 
