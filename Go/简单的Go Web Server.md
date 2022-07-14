@@ -21,5 +21,19 @@
 >
 > From：记得调用前先用ParseFrom，并且不要忘了在请求中加上http头(**Content-Type: application/x-www-form-urlencoded**)
 
+## json库
+
+```go
+type signUpReq struct{
+    Email string `json:"email"`,
+    Password string 'json:"password"',
+    ConfirmedPassword string 'json:"confirmed_password"'
+}
+//这个格式叫Tag,在运行时可以通过反射拿到json标签后面的值
+//典型的声明式写法
+```
+
+
+
 ## 从Http Server开始
 
