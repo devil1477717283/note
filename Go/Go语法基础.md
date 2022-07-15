@@ -544,6 +544,22 @@ func main(){
   ```
 
   ![image-20220714222940391](assets/image-20220714222940391.png)
+  
+* GO切片底层实现
+
+  ```go
+  
+  type slice struct {
+      array unsafe.Pointer
+      len   int
+      cap   int
+  }
+  ```
+
+  * array是指向底层数组的指针
+  * len是切片长度
+  * cap是底层数组的长度，也就是切片的最大容量，cap值永远大于等于len值
+  * Go 编译器会自动为每个新创建的切片，建立一个底层数组，默认底层数组的长度与切片初始元素个数相同。
 
  ###  数组和切片的对比
 
@@ -581,7 +597,6 @@ func main(){
     for k,v:=range M{
         
     }
-    delete(M,"test")
 }
 ```
 
@@ -602,7 +617,191 @@ func main(){
         }
     ```
   
-* 使用`delete`删除map中的某个值
+* for range 对于 string 类型来说，每次循环得到的 v 值是一个 Unicode 字符码点，也就是 rune 类型值，而不是一个字节，返回的第一个值 i 为该 Unicode 字符码点的内存编码（UTF-8）的第一个字节在字符串内存序列中的位置
+
+* for range 还可以与 channel 类型配合工作。
+
+  * for range 每次从 channel 中读取一个元素后，会把它赋值给循环变量 v，并进入循环体。当 channel 中没有数据可读的时候，for range 循环会阻塞在对 channel 的读操作上。直到 channel 关闭时，for range 循环才会结束，这也是 for range 循环与 channel 配合时隐含的循环判断条件。
+
+* 带`label`的`continue`语句
+
+  ```go
+  func main() {
+      var sum int
+      var sl = []int{1, 2, 3, 4, 5, 6}
+  
+  loop:
+      for i := 0; i < len(sl); i++ {
+          if sl[i]%2 == 0 {
+              // 忽略切片中值为偶数的元素
+              continue loop//这个与直接使用continue是一样的
+          }
+          sum += sl[i]
+      }
+      println(sum) // 9
+  }
+  ```
+
+  ```go
+  func main() {
+      var sl = [][]int{
+          {1, 34, 26, 35, 78},
+          {3, 45, 13, 24, 99},
+          {101, 13, 38, 7, 127},
+          {54, 27, 40, 83, 81},
+      }
+  
+  outerloop:
+      for i := 0; i < len(sl); i++ {
+          for j := 0; j < len(sl[i]); j++ {
+              if sl[i][j] == 13 {
+                  fmt.Printf("found 13 at [%d, %d]\n", i, j)
+                  continue outerloop
+                  //一旦内层循环发现 13 这个数值，我们便要中断内层 for 循环，回到外层 				  for 循环继续执行。
+              }
+          }
+      }
+  }
+  ```
+
+  * 带 label 的 continue 语句，通常出现于嵌套循环语句中，被用于跳转到外层循环并继续执行外层循环语句的下一个迭代
+  * 不能使用`goto`
+    * 一旦使用 goto 跳转，那么不管是内层循环还是外层循环都会被终结，代码将会从 outerloop 这个 label 处，开始重新执行我们的嵌套循环语句，这与带 label 的 continue 的跳转语义是完全不同的。
+
+* `break`也支持`label`语法
+
+  * 通过带有 label 的 break 语句，就可以直接终结外层循环，从而从复杂多层次的嵌套循环中直接跳出，避免不必要的算力资源的浪费。
+
+* 循环变量的重用
+
+  ```go
+  
+  func main() {
+      var m = []int{1, 2, 3, 4, 5}  
+               
+      for i, v := range m {
+          go func() {
+              time.Sleep(time.Second * 3)
+              fmt.Println(i, v)
+          }()
+      }
+  
+      time.Sleep(time.Second * 10)
+  }
+  ```
+
+  > 预期输出：
+  >
+  > 0 1
+  > 1 2
+  > 2 3
+  > 3 4
+  > 4 5
+  >
+  > 实际输出：
+  >
+  > 4 5
+  > 4 5
+  > 4 5
+  > 4 5
+  >
+  > 4 5
+
+  * Goroutine 执行的闭包函数引用了它的外层包裹函数中的变量 i、v，这样，变量 i、v 在主 Goroutine 和新启动的 Goroutine 之间实现了共享，而 i, v 值在整个循环过程中是重用的，仅有一份。在 for range 循环结束后，i = 4, v = 5，因此各个 Goroutine 在等待 3 秒后进行输出的时候，输出的是 i, v 的最终值。
+
+  * 解决方法：给闭包函数加上参数
+
+    ```go
+    func main() {
+        var m = []int{1, 2, 3, 4, 5}
+    
+        for i, v := range m {
+            go func(i, v int) {
+                time.Sleep(time.Second * 3)
+                fmt.Println(i, v)
+            }(i, v)
+        }
+    
+        time.Sleep(time.Second * 10)
+    }
+    ```
+
+    
+
+* 参与循环的是range表达式的副本
+
+  ```go
+  
+  func main() {
+      var a = [5]int{1, 2, 3, 4, 5}
+      var r [5]int
+  
+      fmt.Println("original a =", a)
+  
+      for i, v := range a {
+          if i == 0 {
+              a[1] = 12
+              a[2] = 13
+          }
+          r[i] = v
+      }
+  
+      fmt.Println("after for range loop, r =", r)
+      fmt.Println("after for range loop, a =", a)
+  }
+  ```
+
+  > 期待输出：
+  >
+  > original a = [1 2 3 4 5]
+  > after for range loop, r = [1 12 13 4 5]
+  > after for range loop, a = [1 12 13 4 5]
+  > 实际输出：
+  >
+  > original a = [1 2 3 4 5]
+  > after for range loop, r = [1 2 3 4 5]
+  > after for range loop, a = [1 12 13 4 5]
+
+  * 原因就是参与 for range 循环的是 range 表达式的副本。也就是说，在上面这个例子中，真正参与循环的是 a 的副本，而不是真正的 a。
+  * 解决方法：用切片替代数组，遍历数组的指针
+
+* 使用for...range语法遍历map时，**map的遍历，顺序是不确定的**
+
+  ```go
+  
+  var m = map[string]int{
+      "tony": 21,
+      "tom":  22,
+      "jim":  23,
+  }
+  
+  counter := 0
+  for k, v := range m {
+      if counter == 0 {
+          delete(m, "tony")
+      }
+      counter++
+      fmt.Println(k, v)
+  }
+  fmt.Println("counter is ", counter)
+  ```
+
+  > 可能会有两个输出：
+  >
+  > 输出1：
+  >
+  > tony 21
+  > tom 22
+  > jim 23
+  > counter is  3
+  >
+  > 输出2:
+  >
+  > tom 22
+  > jim 23
+  > counter is  2
+
+  注意：不要依赖map的遍历顺序
 
 ### if-else
 
@@ -632,6 +831,13 @@ func main(){
 
 * 使用if i:=10;a==i...,这种格式的`if`时
   * `i`只能在if的作用域使用，出了`if`的作用域就不能使用了
+  * i称为if的自用变量
+* if语句的快乐路径
+  * 仅使用单分支控制结构
+  * 当表达式求值为`false`是，也就是出现错误时，在单分支中快速返回
+  * 正常逻辑的代码布局上始终靠左，这样读者可以从上到下一眼看到该函数正常逻辑的全貌
+  * 函数执行到最后一行代表一种成功状态
+
 
 ### switch
 
@@ -670,7 +876,9 @@ func main(){
   }
   ```
 
-* `switch`后面可以是基础类型和字符串，或者满足特定条件的结构体
+  * type switch里是不能`fallthrough`的
+
+* `switch`后面可以是**基础类型**和**字符串**，或者**满足特定条件的结构体**
 
   ```go
   package main
@@ -804,6 +1012,8 @@ func main() {
   ![image-20220713192042937](assets/image-20220713192042937.png)
 
   可以发现年龄都改成功了，但是名字都没有改成功
+  
+* *T 类型的方法集合包含所有以 *T 为 receiver 参数类型的方法，以及所有以 T 为 receiver 参数类型的方法。
 
 ### type A B 和type A=B
 
@@ -942,8 +1152,6 @@ func main(){
 
 * map取值时有两个返回值，第一个返回值是就是map[key]的value，第二个值返回是否成功取到该值，也就是该key，value是否存在于该map
 
-* 使用for...range语法遍历map时，第一个值是key第二个值是value，前面讲for循环的时候提过了(注意，**map的遍历，顺序是不确定的**)
-
 * 函数类型、map 类型自身，以及切片类型是不能作为 map 的 key 类型的。
 
 * map是引用类型
@@ -981,3 +1189,85 @@ func main(){
   * Go1.9引入了sync.Map类型，在并发下读写是安全的
 * map的扩容机制，采用的是高水位线机制
 * Go 不允许获取 map 中 value 的地址，这个约束是在编译期间就生效的。
+
+## 让函数简洁健壮
+
+* 健壮性的“三不要”原则
+
+  * 原则一：不要相信任何外部输入的参数。
+    * 函数需要对所有输入的参数进行合法性的检查。一旦发现问题，立即终止函数的执行，返回预设的错误值。
+  * 原则二：不要忽略任何一个错误。
+    * 在我们的函数实现中，也会调用标准库或第三方包提供的函数或方法。对于这些调用，我们不能假定它一定会成功，我们一定要显式地检查这些调用返回的错误值。一旦发现错误，要及时终止函数执行，防止错误继续传播。
+  * 原则三：不要假定异常不会发生。
+    * 异常不是错误。错误是可预期的，也是经常会发生的，我们有对应的公开错误码和错误处理预案，但异常却是少见的、意料之外的。
+
+* Go函数的异常处理
+
+  * `panic`指的是 Go 程序在运行时出现的一个异常情况。如果异常出现了，但没有被捕获并恢复，Go 程序的执行就会被终止，即便出现异常的位置不在主 Goroutine 中也会这样。
+
+  * `panic`主要来源
+
+    * Go 运行时
+    * Go 开发人员通过 panic 函数主动触发的
+
+  * 触发`panic`后Go程序的执行过程都是一样的，这个过程称为panicking
+
+    * 当函数 F 调用 `panic `函数时，函数 F 的执行将停止。不过，函数 F 中已进行求值的 deferred 函数都会得到正常执行，执行完这些 deferred 函数后，函数 F 才会把控制权返还给其调用者。
+    * 对于函数 F 的调用者而言，函数 F 之后的行为就如同调用者调用的函数是 panic 一样，该panicking过程将继续在**栈上**进行下去，直到当前 Goroutine 中的所有函数都返回为止，然后 Go 程序将崩溃退出。(无论在哪个 Goroutine 中发生未被恢复的 panic，整个程序都将崩溃退出。)
+
+  * Go 也提供了捕捉 `panic` 并恢复程序正常执行秩序的方法，我们可以通过 `recover `函数来实现这一点。
+
+    ```go
+    func bar() {
+        defer func() {
+            if e := recover(); e != nil {
+                fmt.Println("recover the panic:", e)
+            }
+        }()
+    
+        println("call bar")
+        panic("panic occurs in bar")
+        zoo()
+        println("exit bar")
+    }
+    ```
+
+    > recover 是 Go 内置的专门用于恢复 panic 的函数，**它必须被放在一个 defer 函数中才能生效**。如果 recover 捕捉到 panic，它就会返回以 panic 的具体内容为错误上下文信息的错误值。如果没有 panic 发生，那么 recover 将返回 nil。而且，如果 panic 被 recover 捕捉到，panic 引发的 panicking 过程就会停止。
+
+* 应对`panic`
+
+  * 评估程序对 panic 的忍受度
+    * 不同应用对异常引起的程序崩溃退出的忍受度是不一样的。
+    * 针对各种应用对 panic 忍受度的差异，我们采取的应对 panic 的策略也应该有不同
+  * 提示潜在 bug
+    * 在 Go 标准库中，大多数 panic 的使用都是充当类似断言的作用的。
+  * 不要混淆异常与错误
+
+## defer化简函数实现
+
+* 在 Go 中，只有在函数（和方法）内部才能使用 defer；
+
+* defer 关键字后面只能接函数（或方法），这些函数被称为 deferred 函数。defer 将它们注册到其所在 Goroutine 中，用于存放 deferred 函数的栈数据结构中，这些 deferred 函数将在执行 defer 的函数退出前，按后进先出（LIFO）的顺序被程序调度执行
+
+* 使用defer的几个注意事项
+
+  * 明确哪些函数可以作为 deferred 函数
+
+    * 对于自定义的函数或方法，defer 可以给与无条件的支持，但是对于有返回值的自定义函数或方法，返回值会在 deferred 函数被调度执行的时候被自动丢弃。
+
+    * append、cap、len、make、new、imag 等内置函数都是不能直接作为 deferred 函数的，而 close、copy、delete、print、recover 等内置函数则可以直接被 defer 设置为 deferred 函数。
+
+    * 对于那些不能直接作为 deferred 函数的内置函数，我们可以使用一个包裹它的匿名函数来间接满足要求
+
+      ```go
+      defer func() {
+        _ = append(sl, 11)
+      }()
+      ```
+
+  * defer 关键字后面的表达式，是在将 deferred 函数注册到 deferred 函数栈的时候进行求值的。
+
+  * 知晓 defer 带来的性能损耗
+
+    * Go1.13版本后使用 defer 的函数的执行时间是没有使用 defer 函数的1.45 倍左右。
+
